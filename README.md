@@ -96,18 +96,28 @@ reviews, notebook editing, and local-file rules.
 
 </details>
 
-## Files and unfinished coursework
+## PS2 Exercise 5 — focused feature analysis
 
-- Existing `Titanic_Data_Journey.ipynb`, `functions/`, and supplied `data/`: preserved from remote main.
-- `report.ipynb`: valid EMPTY notebook for the new report, no analysis or text supplied.
-- `figures/`: final figures, tracked by Git.
+This branch (`part_b`) contributes the age and fare analysis. The concise report is in [`report.ipynb`](report.ipynb), and exported visualisations are tracked in `figures/`. It reviews the existing age/fare survival plots and adds age-band survival rates with Wilson intervals and a fare-quartile comparison stratified by passenger class.
+
+- **Age:** survival differs across age bands, with the highest observed rate among children; 177 of 891 training passengers have missing age. Keep age as a candidate, handle missingness explicitly, and avoid overly fine age bins.
+- **Fare:** survival rises across overall fare quartiles, but fare is strongly associated with passenger class (median fares: £60.29, £14.25, and £8.05 for classes 1–3). Consider fare alongside `Pclass`, then use validation to check whether it adds predictive value.
+- The plots describe associations in `data/train.csv`, not causal effects. Small age/class/fare subgroups have uncertain rates.
+
+Open `report.ipynb` with the PS1 Conda environment and select its Python kernel to read the report. The exported PNGs are already included; the original exploratory notebook remains [`Titanic_Data_Journey.ipynb`](Titanic_Data_Journey.ipynb).
+
+## Files
+
+- `Titanic_Data_Journey.ipynb`, `functions/`, and supplied `data/`: preserved from the PS1 repository.
+- `report.ipynb`: focused report on age and fare feature selection.
+- `figures/age_survival.png` and `figures/fare_survival_by_class.png`: exported report figures, tracked by Git.
 - `pixi.toml` + `pixi.lock`: retained optional Pixi environment and lock file.
 - `environment.yml`: the PS1 Conda environment specification used for PS2; it is not the same dependency snapshot as the optional Pixi lock.
 
 Keep the report at 500 words or fewer, excluding graphs. Each chosen visualisation
 must justify a feature-selection decision. Review existing figures and favour a
-small useful selection. Each author supplies their explanation; the report owner
-integrates the final notebook. No feature selections or conclusions are prefilled.
+small useful selection. This branch records the age/fare contribution; integrate
+other contributors’ selected analyses in the final report as the team completes them.
 
 
 ## Setup verification (Pixi only)
@@ -136,12 +146,7 @@ Python alignment is preserved in
 [`docs/readme-history/README_before_python_alignment.md`](docs/readme-history/README_before_python_alignment.md)
 from commit `efdc0d4ea8642c7083a5da975142224445951c03`. Keep these backups unchanged.
 
-When completing the coursework, update this README to explain the selected
-visualisations and the reasoning behind feature-selection decisions, and how to
-run and export the work. Preserve or restore the original PS1 project overview,
-structure, usage instructions, and collaboration guidelines below. The formal
-report remains `report.ipynb` (at most 500 words, excluding graphs); the README
-does not replace it.
+The README now summarises the selected age/fare visualisations and their feature-selection implications. Preserve the original PS1 project overview, structure, usage instructions, and collaboration guidelines below. The formal report remains `report.ipynb` (at most 500 words, excluding graphs); the README does not replace it.
 
 ## Original repository instructions (retained)
 
