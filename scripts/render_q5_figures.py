@@ -17,6 +17,13 @@ assert len(train)==891 and len(test)==418 and 'Survived' not in test
 assert train['Survived'].isin([0,1]).all() and train.PassengerId.is_unique
 plt.rcParams.update({'font.size':11,'axes.spines.top':False,'axes.spines.right':False,'axes.titleweight':'bold','figure.facecolor':'white'})
 
+def wilson_errors(rate, n, z=1.96):
+    """Return distances from the observed proportions to Wilson limits."""
+    denominator = 1 + z*z/n
+    centre = (rate + z*z/(2*n)) / denominator
+    half_width = z * np.sqrt(rate*(1-rate)/n + z*z/(4*n*n)) / denominator
+    return np.vstack((rate - (centre - half_width), centre + half_width - rate))
+
 # Survival proportions use labelled training data only.
 fig, ax=plt.subplots(figsize=(9.5,5.7))
 summary=train.groupby(['Pclass','Sex'])['Survived'].agg(['sum','count','mean'])
@@ -54,22 +61,22 @@ print('sex/class\n',summary);print('family\n',s);print('missing train\n',train[f
 
 # Age and fare plots adapted from B’s earlier part_b notebook.
 df = train.copy()
-# Age survival rates by age band, with approximate 95% binomial intervals.
+# Age survival rates by age band, with 95% Wilson intervals.
 age_bins = [0, 12, 18, 35, 60, 100]
 age_labels = ['0–12', '13–18', '19–35', '36–60', '61+']
 df['Age band'] = pd.cut(df['Age'], bins=age_bins, labels=age_labels, include_lowest=True)
 age_stats = df.dropna(subset=['Age']).groupby('Age band', observed=False)['Survived'].agg(['mean', 'count'])
 fig, ax = plt.subplots(figsize=(8.5, 4.6))
 x = np.arange(len(age_stats)); rate = age_stats['mean'].to_numpy(); n = age_stats['count'].to_numpy()
-se = np.sqrt(rate * (1-rate) / n)
+errors = wilson_errors(rate, n)
 ax.bar(x, rate, color='#4C78A8', width=.68)
-ax.errorbar(x, rate, yerr=1.96*se, fmt='none', ecolor='#243746', capsize=4, lw=1.3)
+ax.errorbar(x, rate, yerr=errors, fmt='none', ecolor='#243746', capsize=4, lw=1.3)
 for i, (v, count) in enumerate(zip(rate, n)):
-    ax.text(i, min(v + 1.96*se[i] + .035, .97), f'n={count}', ha='center', va='bottom', fontsize=9)
+    ax.text(i, min(v + errors[1, i] + .035, .97), f'n={count}', ha='center', va='bottom', fontsize=9)
 ax.set_xticks(x, age_stats.index.astype(str)); ax.set_ylim(0, 1.08)
 ax.set_ylabel('Observed survival rate'); ax.set_xlabel('Age (years)')
 ax.set_title('Survival varied by age, especially for children', loc='left', weight='bold')
-ax.text(0, -.23, 'Bars show survival proportion; whiskers show approximate 95% binomial intervals. Age missing for 19.9% of training rows.', transform=ax.transAxes, fontsize=8.5, color='#555')
+ax.text(0, -.23, 'Bars show survival proportion; whiskers show 95% Wilson intervals. Age missing for 19.9% of training rows.', transform=ax.transAxes, fontsize=8.5, color='#555')
 fig.tight_layout(); fig.savefig(a.output / 'q5_03_age.png', dpi=180, bbox_inches='tight'); plt.close(fig)
 
 # Fare quartiles calculated within Pclass to inspect the association beyond class mix.
@@ -79,13 +86,13 @@ for cls, ax, color in zip([1, 2, 3], axes, ['#4C78A8', '#F58518', '#54A24B']):
     sub['Fare quartile'] = pd.qcut(sub['Fare'], q=4, labels=['Q1', 'Q2', 'Q3', 'Q4'], duplicates='drop')
     stats = sub.groupby('Fare quartile', observed=False)['Survived'].agg(['mean', 'count']).dropna()
     xx = np.arange(len(stats)); rr = stats['mean'].to_numpy(); nn = stats['count'].to_numpy()
-    ss = np.sqrt(rr * (1-rr) / nn)
-    ax.errorbar(xx, rr, yerr=1.96*ss, color=color, marker='o', lw=2, capsize=3)
+    errors = wilson_errors(rr, nn)
+    ax.errorbar(xx, rr, yerr=errors, color=color, marker='o', lw=2, capsize=3)
     for i, (v, count) in enumerate(zip(rr, nn)):
         ax.annotate(f'n={count}', (i, v), xytext=(0, 8), textcoords='offset points', ha='center', fontsize=8)
     ax.set_xticks(xx, stats.index.astype(str)); ax.set_title(f'Pclass {cls}', weight='bold')
     ax.set_xlabel('Fare quartile within class'); ax.set_ylim(0, 1.08)
 axes[0].set_ylabel('Observed survival rate')
 fig.suptitle('Fare adds context, but its survival pattern depends on class', x=.08, ha='left', weight='bold', y=1.03)
-fig.text(.08, -.03, 'Quartiles are calculated separately within each passenger class; whiskers show approximate 95% binomial intervals.', fontsize=8.5, color='#555')
+fig.text(.08, -.03, 'Quartiles are calculated separately within each passenger class; whiskers show 95% Wilson intervals.', fontsize=8.5, color='#555')
 fig.tight_layout(); fig.savefig(a.output / 'q5_02_fare_class.png', dpi=180, bbox_inches='tight'); plt.close(fig)
