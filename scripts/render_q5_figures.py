@@ -62,8 +62,8 @@ print('sex/class\n',summary);print('family\n',s);print('missing train\n',train[f
 # Age and fare plots adapted from B’s earlier part_b notebook.
 df = train.copy()
 # Age survival rates by age band, with 95% Wilson intervals.
-age_bins = [0, 12, 18, 35, 60, 100]
-age_labels = ['0–12', '13–18', '19–35', '36–60', '61+']
+age_bins = [0, 12, 18, 30, 45, 60, float('inf')]
+age_labels = ['0–12', '13–18', '19–30', '31–45', '46–60', '61+']
 df['Age band'] = pd.cut(df['Age'], bins=age_bins, labels=age_labels, include_lowest=True)
 age_stats = df.dropna(subset=['Age']).groupby('Age band', observed=False)['Survived'].agg(['mean', 'count'])
 fig, ax = plt.subplots(figsize=(8.5, 4.6))
