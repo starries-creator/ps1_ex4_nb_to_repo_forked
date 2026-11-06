@@ -79,9 +79,19 @@ ax.set_title('Survival varied by age, especially for children', loc='left', weig
 ax.text(0, -.23, 'Bars show survival proportion; whiskers show 95% Wilson intervals. Age missing for 19.9% of training rows.', transform=ax.transAxes, fontsize=8.5, color='#555')
 fig.tight_layout(); fig.savefig(a.output / 'q5_03_age.png', dpi=180, bbox_inches='tight'); plt.close(fig)
 
-# Fare quartiles calculated within Pclass to inspect the association beyond class mix.
-fig, axes = plt.subplots(1, 3, figsize=(12, 4.3), sharey=True)
-for cls, ax, color in zip([1, 2, 3], axes, ['#4C78A8', '#F58518', '#54A24B']):
+# Compare global fare quartiles with ranks calculated within each class.
+fig, axes = plt.subplots(1, 4, figsize=(15.2, 4.4), sharey=True)
+overall = df.copy()
+overall['Fare quartile'] = pd.qcut(overall['Fare'], q=4, labels=['Q1', 'Q2', 'Q3', 'Q4'])
+overall_stats = overall.groupby('Fare quartile', observed=False)['Survived'].agg(['mean', 'count'])
+xx = np.arange(len(overall_stats)); rr = overall_stats['mean'].to_numpy(); nn = overall_stats['count'].to_numpy()
+overall_errors = wilson_errors(rr, nn)
+axes[0].errorbar(xx, rr, yerr=overall_errors, color='#536878', marker='o', lw=2, capsize=3)
+for i, (v, count) in enumerate(zip(rr, nn)):
+    axes[0].annotate(f'n={count}', (i, v + overall_errors[1, i]), xytext=(0, 4), textcoords='offset points', ha='center', fontsize=8)
+axes[0].set_xticks(xx, overall_stats.index.astype(str)); axes[0].set_title('Overall', weight='bold')
+axes[0].set_xlabel('Fare quartile (all passengers)'); axes[0].set_ylim(0, 1.08)
+for cls, ax, color in zip([1, 2, 3], axes[1:], ['#4C78A8', '#F58518', '#54A24B']):
     sub = df.loc[df['Pclass'] == cls].copy()
     sub['Fare quartile'] = pd.qcut(sub['Fare'], q=4, labels=['Q1', 'Q2', 'Q3', 'Q4'], duplicates='drop')
     stats = sub.groupby('Fare quartile', observed=False)['Survived'].agg(['mean', 'count']).dropna()
@@ -89,10 +99,12 @@ for cls, ax, color in zip([1, 2, 3], axes, ['#4C78A8', '#F58518', '#54A24B']):
     errors = wilson_errors(rr, nn)
     ax.errorbar(xx, rr, yerr=errors, color=color, marker='o', lw=2, capsize=3)
     for i, (v, count) in enumerate(zip(rr, nn)):
-        ax.annotate(f'n={count}', (i, v), xytext=(0, 8), textcoords='offset points', ha='center', fontsize=8)
+        ax.annotate(f'n={count}', (i, v + errors[1, i]), xytext=(0, 4), textcoords='offset points', ha='center', fontsize=8)
     ax.set_xticks(xx, stats.index.astype(str)); ax.set_title(f'Pclass {cls}', weight='bold')
     ax.set_xlabel('Fare quartile within class'); ax.set_ylim(0, 1.08)
 axes[0].set_ylabel('Observed survival rate')
-fig.suptitle('Fare adds context, but its survival pattern depends on class', x=.08, ha='left', weight='bold', y=1.03)
-fig.text(.08, -.03, 'Quartiles are calculated separately within each passenger class; whiskers show 95% Wilson intervals.', fontsize=8.5, color='#555')
+for ax in axes:
+    ax.margins(x=.14)
+fig.suptitle('Fare and survival: overall and within passenger class', x=.08, ha='left', weight='bold', y=1.03)
+fig.text(.08, -.03, 'Overall quartiles use all passengers; class panels use separate class-specific quartiles. Cutoffs differ across panels. Whiskers show 95% Wilson intervals.', fontsize=8.5, color='#555')
 fig.tight_layout(); fig.savefig(a.output / 'q5_02_fare_class.png', dpi=180, bbox_inches='tight'); plt.close(fig)
