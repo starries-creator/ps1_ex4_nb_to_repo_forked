@@ -37,13 +37,19 @@ ax.set_ylim(0,.75);ax.yaxis.set_major_formatter(PercentFormatter(1));ax.set_ylab
 fig.text(.12,.01,'Training only. Family size = SibSp + Parch + 1; groups are unadjusted.',fontsize=9,color='#555');fig.tight_layout(rect=(0,.06,1,1));fig.savefig(a.output/'q5_04_family.png',dpi=180,bbox_inches='tight');plt.close(fig)
 
 features=['Cabin','Age','Embarked','Fare']; x=np.arange(len(features)); width=.34
-fig,ax=plt.subplots(figsize=(9.5,5.3))
+fig,(ax, cabin_ax)=plt.subplots(1,2,figsize=(14,5.5),gridspec_kw={'width_ratios':[1.4,1]})
 for data,offset,color,label in [(train,-width/2,'#2a7580','Training (n=891)'),(test,width/2,'#d37a55','Test (n=418)')]:
  n=data[features].isna().sum(); vals=n/len(data)
  ax.bar(x+offset,vals,width,color=color,label=label)
  for xx,v,k in zip(x+offset,vals,n): ax.text(xx,v+.018,f'{v:.1%}\n({k})',ha='center',fontsize=9)
 ax.set_xticks(x,features);ax.set_ylim(0,1);ax.yaxis.set_major_formatter(PercentFormatter(1));ax.set_ylabel('Missing / rows in dataset');ax.set_title('Feature availability differs across train and test',loc='left',fontsize=15);ax.legend(frameon=False,ncol=2,loc='upper right');ax.grid(axis='y',alpha=.18);ax.set_axisbelow(True)
-fig.text(.1,.01,'Test is used only for input availability; it has no survival labels.',fontsize=9,color='#555');fig.tight_layout(rect=(0,.06,1,1));fig.savefig(a.output/'q5_05_missingness.png',dpi=180,bbox_inches='tight');plt.close(fig)
+cabin=train.groupby(train['Cabin'].notna())['Survived'].agg(['sum','count','mean']).reindex([False,True])
+assert cabin['count'].sum()==len(train)
+bars=cabin_ax.bar(['Missing','Recorded'],cabin['mean'],color=['#d37a55','#2a7580'],width=.55)
+for bar,(_,row) in zip(bars,cabin.iterrows()):
+ cabin_ax.text(bar.get_x()+bar.get_width()/2,row['mean']+.03,f"{row['mean']:.1%}\n{int(row['sum'])}/{int(row['count'])}",ha='center',fontsize=10)
+cabin_ax.set_ylim(0,1);cabin_ax.yaxis.set_major_formatter(PercentFormatter(1));cabin_ax.set_ylabel('Survived / training passengers');cabin_ax.set_xlabel('Cabin availability');cabin_ax.set_title('Survival by Cabin availability',loc='left',fontsize=15);cabin_ax.grid(axis='y',alpha=.18);cabin_ax.set_axisbelow(True)
+fig.text(.08,.01,'Survival uses labelled training data only. Test is used only for input availability.',fontsize=9,color='#555');fig.tight_layout(rect=(0,.06,1,1));fig.savefig(a.output/'q5_05_missingness.png',dpi=180,bbox_inches='tight');plt.close(fig)
 print('sex/class\n',summary);print('family\n',s);print('missing train\n',train[features].isna().sum());print('missing test\n',test[features].isna().sum())
 
 # Age and fare plots adapted from B’s earlier part_b notebook.
